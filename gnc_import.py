@@ -1,6 +1,7 @@
 from gnucash import Session, Account, Transaction, Split, GncNumeric, gnucash_core
 import mt940
 from mt940 import MT940
+import decimal
 from decimal import Decimal
 import sys
 
@@ -81,8 +82,14 @@ except gnucash_core.GnuCashBackendException as e:
 
 book = session.get_book()
 currency = book.get_table().lookup("CURRENCY", "EUR")
-ing = book.get_root_account().get_children()[0].get_children()[0].get_children()[0]     
+#ing = book.get_root_account().get_children()[0].get_children()[0].get_children()[0]     
+ing = book.get_root_account().lookup_by_name('Bank')     
+PBTW = book.get_root_account().lookup_by_name('Te ontvangen BTW')
+NBTW = book.get_root_account().lookup_by_name('Te betalen BTW')
 root_acc = book.get_root_account()
+print(ing.name)
+print(PBTW.name)
+print(NBTW.name)
 
 # dict containing all expenses accounts (flat tree)
 child_accounts = gnc_get_child_accounts_dict(root_acc)
@@ -132,10 +139,21 @@ try:
         split1.SetAccount(ing)
         split1.SetParent(trans)
 
+        amountex  = (t['amount']/121*100).quantize(Decimal('.001'), rounding=decimal.ROUND_DOWN)
+        amounttax = (t['amount']/121*21).quantize(Decimal('.001'), rounding=decimal.ROUND_DOWN)
         split2 = Split(book)
-        split2.SetValue(gnc_numeric_from_decimal(t['amount']).neg())
+        split2.SetValue(gnc_numeric_from_decimal(amountex).neg())
         split2.SetAccount(t['account'])
         split2.SetParent(trans)
+        
+        split3 = Split(book)
+        split3.SetValue(gnc_numeric_from_decimal(amounttax).neg())
+        if (t['amount'] > 0):
+            split3.SetAccount(NBTW)
+        else:
+            split3.SetAccount(PBTW)
+        split3.SetParent(trans)
+        
             
         trans.SetDescription(t['desc'])
         tdate = t['date']
