@@ -2,6 +2,7 @@ import urwid
 import sys
 import io
 import time
+from decimal import Decimal
 
 transactions = [{'desc':'1'},{'desc':'2'},{'desc':'3'},{'desc':'4'},{'desc':'5'},{'desc':'6'},{'desc':'7'}]
 options = {'bla': 'bla', 'cavia':'cavia', 'kantoor':'kantoor', 'kantine':'kantine'}
@@ -62,11 +63,81 @@ class EditCompletion(urwid.Edit):
         #    self.insert_text(key)
             return key
 
+class FloatEdit(urwid.Edit):
+    """Edit widget for float values"""
+
+    def valid_char(self, ch):
+        """
+        Return true for decimal digits.
+        """
+        if self.get_edit_text().count('.') < 1:
+            return len(ch)==1 and ch in ".0123456789"
+        return len(ch)==1 and ch in "0123456789"
+
+    def __init__(self,caption="",default=None):
+        """
+        caption -- caption markup
+        default -- default edit value
+
+        >>> IntEdit(u"", 42)
+        <IntEdit selectable flow widget '42' edit_pos=2>
+        """
+        if default is not None: val = str(default)
+        else: val = ""
+        self.__super.__init__(caption,val)
+
+    def keypress(self, size, key):
+        """
+        Handle editing keystrokes.  Remove leading zeros.
+
+        >>> e, size = FloatEdit(u"", 500.2), (10,)
+        >>> e.keypress(size, 'home')
+        >>> e.keypress(size, 'delete')
+        >>> print e.edit_text
+                002
+        >>> e.keypress(size, 'end')
+        >>> print e.edit_text
+        2
+        """
+        (maxcol,) = size
+        unhandled = super(FloatEdit, self).keypress(size, key)
+
+        if not unhandled:
+            # trim leading zeros
+            while self.edit_pos > 0 and self.edit_text[:1] == "0":
+                self.set_edit_pos( self.edit_pos - 1)
+                self.set_edit_text(self.edit_text[1:])
+                if self.edit_text[0] == '.':
+                    self.set_edit_text("0"+self.edit_text)
+
+        return unhandled
+
+    def value(self):
+        """
+        Return the numeric value of self.edit_text.
+
+        >>> e, size = IntEdit(), (10,)
+        >>> e.keypress(size, '5')
+        >>> e.keypress(size, '1')
+        >>> e.value() == 51
+        True
+        """
+        if self.edit_text:
+            return float(self.edit_text)
+        else:
+            return 0.0
+
 class TransactionListBox(urwid.ListBox):
     def __init__(self, transactions, account_options, *args, **kwargs):
         tws = []
         for t in transactions:
-            tws.append(urwid.Pile((urwid.Text(('title transaction', "[{0}]{1}".format(t.get('amount', 0), t['desc']))), EditCompletion(account_options))))
+            tws.append(urwid.Pile(
+                (
+                    urwid.Text(('title transaction', "[{0}]{1}".format(t.get('amount', 0), t['desc']))), 
+                    EditCompletion(account_options), 
+                    FloatEdit(caption='BTW: ', default=str((t.get('amount',Decimal(0.0))/121*21).quantize(Decimal('.01'))))
+                )
+            ))
         #urwid.Pile()
         body = urwid.SimpleFocusListWalker(tws)
         
@@ -109,6 +180,12 @@ def gnc_urw_edit(transactions, options):
                 transactions[count]['account'] = options[acc_name]
             except Exception as e:
                 print("Can't match accounts, please fix: %s" %e)
+                break
+            tax = pile.contents[2][0].value()
+            try:
+                transactions[count]['tax'] = tax
+            except Exception as e:
+                print("Can't get text value, please fix row: %s" %e)
                 break
             else:
                 count += 1
