@@ -115,7 +115,7 @@ for statement in mt.statements:
         t['account'] = ""
         transacts.append(t)
 
-from . import gnc_urw
+import gnc_urw
 
 try:
     print((gnc_urw.gnc_urw_edit(transacts, child_accounts)))
@@ -141,8 +141,40 @@ try:
         tdate = t['date']
         trans.SetDate(tdate.day, tdate.month, tdate.year)
         trans.CommitEdit()
+except Exception as e:
+    print("saving transacts to crash.transacts using pickle")
+    import pickle
+    with open("crash.transacts", 'wb') as out:
+        pickle.dump(transacts, out)        
+    print("An error occured: {0}".format(e)) 
+    raise(e)
 finally:
     session.save()
     session.end()
     session.destroy()
 
+"""
+import pickle
+with open("crash.transacts", 'rb') as trans:
+    transacts = pickle.load(trans)
+    for t in transacts:
+        #print gnc_numeric_from_decimal(tamount)
+        
+        trans = Transaction(book)
+        trans.BeginEdit()
+        trans.SetCurrency(currency)
+        split1 = Split(book)
+        split1.SetValue(gnc_numeric_from_decimal(t['amount']))
+        split1.SetAccount(ing)
+        split1.SetParent(trans)
+
+        split2 = Split(book)
+        split2.SetValue(gnc_numeric_from_decimal(t['amount']).neg())
+        split2.SetAccount(t['account'])
+        split2.SetParent(trans)
+            
+        trans.SetDescription(t['desc'])
+        tdate = t['date']
+        trans.SetDate(tdate.day, tdate.month, tdate.year)
+        trans.CommitEdit()
+"""
