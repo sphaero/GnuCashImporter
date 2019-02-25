@@ -11,7 +11,7 @@ parser.add_argument('mt940', type=str, help='mt940 file to import from')
 parser.add_argument('gnucash', type=str, help='gnucash file to import to')
 
 args = parser.parse_args()
-print("Parsing mt940 file {0} and Gnucash file {1}".format(args.mt940, args.gnucash))
+print(("Parsing mt940 file {0} and Gnucash file {1}".format(args.mt940, args.gnucash)))
 
 def gnc_get_child_accounts_dict(account, d=None):
     """
@@ -43,7 +43,7 @@ def gnc_numeric_from_decimal(decimal_value):
     numerator_place_value = 1
     # add each digit to the final value multiplied by the place value
     # from least significant to most sigificant
-    for i in xrange(len(digits)-1,-1,-1):
+    for i in range(len(digits)-1,-1,-1):
         numerator += digits[i] * numerator_place_value
         numerator_place_value *= TEN
 
@@ -63,11 +63,11 @@ def gnc_numeric_from_decimal(decimal_value):
 
 def _get_leave_account(acc, acc_dict):
     children = acc.get_children()
-    print("boe", children)
+    print(("boe", children))
     if children:
         print("yesy")
         for a in children():
-            print("huh", a.name)
+            print(("huh", a.name))
             acc_dict = _get_leave_account(a, acc_dict)
     else:
         acc_dict[acc.name] = acc
@@ -115,10 +115,10 @@ for statement in mt.statements:
         t['account'] = ""
         transacts.append(t)
 
-import gnc_urw
+from . import gnc_urw
 
 try:
-    print(gnc_urw.gnc_urw_edit(transacts, child_accounts))
+    print((gnc_urw.gnc_urw_edit(transacts, child_accounts)))
     print(transacts)
 
     for t in transacts:

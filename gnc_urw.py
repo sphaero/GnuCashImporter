@@ -108,12 +108,12 @@ def gnc_urw_edit(transactions, options):
             try:
                 transactions[count]['account'] = options[acc_name]
             except Exception as e:
-                print("Can't match accounts, please fix: %s" %e)
+                print(("Can't match accounts, please fix: %s" %e))
                 break
             else:
                 count += 1
 
-        print count, len(transactions)
+        print((count, len(transactions)))
         if count == len(transactions):
             out.release_stdout()
             raise urwid.ExitMainLoop()
@@ -127,7 +127,7 @@ def gnc_urw_edit(transactions, options):
     footer = urwid.AttrMap(urwid.Columns(((18, save_b), (16,cancel_b)),dividechars=5), 'heading')
     header = urwid.AttrMap(urwid.Text("Edit transactions"), 'heading')
 
-    tlb = urwid.AttrMap(TransactionListBox(transactions, options.keys()), 'selected')
+    tlb = urwid.AttrMap(TransactionListBox(transactions, list(options.keys())), 'selected')
     acc_options = urwid.AttrMap(urwid.LineBox(urwid.Text("\n".join(options)), title='options'), 'focus options')
     out = UrwStdWriter()
 
